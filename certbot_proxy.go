@@ -66,23 +66,23 @@ func getIp(r *http.Request) string {
 }
 
 func acmeChallangeHandler(w http.ResponseWriter, r *http.Request) {
-	if token, ok := certTokens[r.Host]; ok {
-		if r.Method == "GET" {
+	if r.Method == "GET" {
+		ip := getIp(r)
+		log.Printf("Request token for %s from %s", r.Host, ip)
+		if token, ok := certTokens[r.Host]; ok {
 			if r.URL.Path == acmeChallangePath+token.Token {
-				log.Printf("Return token for %s to %s", r.Host, getIp(r))
+				log.Printf("Return token for %s to %s", r.Host, ip)
 				_, err := fmt.Fprintf(w, token.Validation)
 				if err != nil {
 					http.Error(w, "Internal error", http.StatusInternalServerError)
 				}
 				return
 			}
-			w.WriteHeader(http.StatusNotFound)
-			return
 		}
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	w.WriteHeader(http.StatusNotFound)
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
 func acmeTokenHandler(w http.ResponseWriter, r *http.Request) {
