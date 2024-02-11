@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -18,6 +19,10 @@ type CertToken struct {
 	Validation string `json:"validation"`
 }
 
+var version string = ""
+var committer string = ""
+var date string = ""
+
 // Make map of certificate tokens where the key is the domain
 var certTokens = make(map[string]CertToken)
 
@@ -30,6 +35,16 @@ const MaxTokens = 10000
 const MaxUploadFileSize = 1024 * 1014
 
 func main() {
+	var showVersion bool
+
+	flag.BoolVar(&showVersion, "version", false, "Show version")
+	flag.Parse()
+
+	if showVersion {
+		fmt.Printf("Version:   %s\nCommitter: %s\nDate:      %s\n", version, committer, date)
+		os.Exit(0)
+	}
+
 	if tokenPostPath == "" {
 		tokenPostPath = "/token_poster/"
 	}
