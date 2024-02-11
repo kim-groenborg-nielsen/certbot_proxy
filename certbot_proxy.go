@@ -20,7 +20,7 @@ type CertToken struct {
 }
 
 var version string = ""
-var committer string = ""
+var commit string = ""
 var date string = ""
 
 // Make map of certificate tokens where the key is the domain
@@ -41,7 +41,7 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Printf("Version:   %s\nCommitter: %s\nDate:      %s\n", version, committer, date)
+		fmt.Printf("Version: %s\nCommit:  %s\nDate:    %s\n", version, commit, date)
 		os.Exit(0)
 	}
 
