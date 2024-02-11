@@ -13,20 +13,21 @@ import (
 )
 
 type CertToken struct {
-	Domain string `json:"domain"`
-	Token string `json:"token"`
+	Domain     string `json:"domain"`
+	Token      string `json:"token"`
 	Validation string `json:"validation"`
 }
 
-// Make map of certificat tokens where the key is the domain
+// Make map of certificate tokens where the key is the domain
 var certTokens = make(map[string]CertToken)
 
 var tokenPostPath = os.Getenv("TOKEN_POST_PATH")
 var uploadPath = os.Getenv("UPLOAD_PATH")
-const acmeChallangePath = "/.well-known/acme-challenge/"
-const MAX_TOKENS = 10000
 
-const MAX_UPLOAD_FILE_SIZE = 1024 * 1014
+const acmeChallengePath = "/.well-known/acme-challenge/"
+const MaxTokens = 10000
+
+const MaxUploadFileSize = 1024 * 1014
 
 func main() {
 	if tokenPostPath == "" {
@@ -46,9 +47,9 @@ func main() {
 	}
 
 	//http.HandleFunc("/", indexHandler)
-	http.HandleFunc(acmeChallangePath, acmeChallangeHandler)
+	http.HandleFunc(acmeChallengePath, acmeChallengeHandler)
 	http.HandleFunc(tokenPostPath, acmeTokenHandler)
-	http.HandleFunc(tokenPostPath + "upload", fileUploadHandler)
+	http.HandleFunc(tokenPostPath+"upload", fileUploadHandler)
 
 	log.Printf("Upload file path %s", uploadPath)
 	log.Printf("Token post path %s", tokenPostPath)
@@ -65,12 +66,12 @@ func getIp(r *http.Request) string {
 	return r.RemoteAddr
 }
 
-func acmeChallangeHandler(w http.ResponseWriter, r *http.Request) {
+func acmeChallengeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		ip := getIp(r)
 		log.Printf("Request token for %s from %s", r.Host, ip)
 		if token, ok := certTokens[r.Host]; ok {
-			if r.URL.Path == acmeChallangePath+token.Token {
+			if r.URL.Path == acmeChallengePath+token.Token {
 				log.Printf("Return token for %s to %s", r.Host, ip)
 				_, err := fmt.Fprintf(w, token.Validation)
 				if err != nil {
@@ -102,8 +103,8 @@ func acmeTokenHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if len(certTokens) >= MAX_TOKENS {
-			log.Printf("Hits token limitation of %d, someone is proberly doing DoS, maybe from %s", MAX_TOKENS, ip)
+		if len(certTokens) >= MaxTokens {
+			log.Printf("Hits token limitation of %d, someone is proberly doing DoS, maybe from %s", MaxTokens, ip)
 			w.WriteHeader(http.StatusInsufficientStorage)
 		}
 		log.Printf("Set token for %s from %s", token.Domain, ip)
@@ -119,15 +120,20 @@ func acmeTokenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeUploadFile(fileHeader *multipart.FileHeader, domain string) (int, error) {
-	if fileHeader.Size > MAX_UPLOAD_FILE_SIZE {
-		return http.StatusBadRequest, fmt.Errorf("Size of %s is larger than %d", fileHeader.Filename, MAX_UPLOAD_FILE_SIZE)
+	if fileHeader.Size > MaxUploadFileSize {
+		return http.StatusBadRequest, fmt.Errorf("size of %s is larger than %d", fileHeader.Filename, MaxUploadFileSize)
 	}
 
 	file, err := fileHeader.Open()
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("Upload: Error opening upload file %s: %v", fileHeader.Filename, err)
+		return http.StatusInternalServerError, fmt.Errorf("upload: Error opening upload file %s: %v", fileHeader.Filename, err)
 	}
-	defer file.Close()
+	defer func(file multipart.File) {
+		err := file.Close()
+		if err != nil {
+			log.Printf("upload: Error closing %s: %v", fileHeader.Filename, err)
+		}
+	}(file)
 
 	buffer := make([]byte, 512)
 	if _, err := file.Read(buffer); err != nil {
@@ -138,27 +144,32 @@ func writeUploadFile(fileHeader *multipart.FileHeader, domain string) (int, erro
 	log.Printf("Upload file %s with type %s", fileHeader.Filename, fileType)
 
 	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("Upload: Cannot seek to start of %s: %v", fileHeader.Filename ,err)
+		return http.StatusInternalServerError, fmt.Errorf("upload: Cannot seek to start of %s: %v", fileHeader.Filename, err)
 	}
 
 	domainUpload := path.Join(uploadPath, domain)
 	if err := os.MkdirAll(domainUpload, os.ModePerm); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("Upload: Unable to create %s: %v", domainUpload, err)
+		return http.StatusInternalServerError, fmt.Errorf("upload: Unable to create %s: %v", domainUpload, err)
 	}
 
 	fullUploadPath := path.Join(domainUpload, fileHeader.Filename)
 	if strings.Contains(fullUploadPath, "..") {
-		return http.StatusBadRequest, fmt.Errorf("Upload: Invalid upload fullpath: %s", fullUploadPath)
+		return http.StatusBadRequest, fmt.Errorf("upload: Invalid upload fullpath: %s", fullUploadPath)
 	}
 
 	f, err := os.Create(fullUploadPath)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("Upload: Cannot create %s", fullUploadPath)
+		return http.StatusInternalServerError, fmt.Errorf("upload: Cannot create %s", fullUploadPath)
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			log.Printf("upload: Error closing %s: %v", fullUploadPath, err)
+		}
+	}(f)
 
 	if _, err := io.Copy(f, file); err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("Upload: Error writing %s: %v", fullUploadPath, err)
+		return http.StatusInternalServerError, fmt.Errorf("upload: Error writing %s: %v", fullUploadPath, err)
 	}
 	log.Printf("%s uploaded", fullUploadPath)
 	return http.StatusOK, nil

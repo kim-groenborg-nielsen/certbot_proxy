@@ -62,13 +62,13 @@ func (token *CertToken) executeRequest(t *testing.T, method string) *httptest.Re
 }
 
 func (token *CertToken) newTestChallangeRequest(t *testing.T, method string) *http.Request {
-	return newTestRequest(t, method, fmt.Sprintf("http://%s%s%s", token.Domain, acmeChallangePath, token.Token), nil)
+	return newTestRequest(t, method, fmt.Sprintf("http://%s%s%s", token.Domain, acmeChallengePath, token.Token), nil)
 }
 
 func (token *CertToken) getValidation(t *testing.T) (*httptest.ResponseRecorder, string) {
 	req := token.newTestChallangeRequest(t, http.MethodGet)
-	//req := newTestRequest(t, http.MethodGet, fmt.Sprintf("http://%s%s%s", token.Domain, acmeChallangePath, token.Token), nil)
-	rr := executeTestRequest(req, acmeChallangeHandler)
+	//req := newTestRequest(t, http.MethodGet, fmt.Sprintf("http://%s%s%s", token.Domain, acmeChallengePath, token.Token), nil)
+	rr := executeTestRequest(req, acmeChallengeHandler)
 	s := ""
 	if rr.Code == http.StatusOK {
 		body, err := ioutil.ReadAll(rr.Body)
@@ -151,7 +151,7 @@ func TestAcmeTokenHandlerSetAndDelete(t *testing.T) {
 
 	// Test invalid method from acme view
 	req := token.newTestChallangeRequest(t, http.MethodPost)
-	rr = executeTestRequest(req, acmeChallangeHandler)
+	rr = executeTestRequest(req, acmeChallengeHandler)
 	assert.Equal(t, rr.Code, http.StatusMethodNotAllowed, "Test invalid method from acme view")
 
 	// Test invalid token path from acme view
@@ -168,21 +168,21 @@ func TestAcmeTokenHandlerSetAndDelete(t *testing.T) {
 
 func TestAcmeChallangeHandlerInvalidUrl(t *testing.T) {
 	// Test invalid URL
-	req, err := http.NewRequest(http.MethodGet, acmeChallangePath+"test.dk", nil)
+	req, err := http.NewRequest(http.MethodGet, acmeChallengePath+"test.dk", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	rr := executeTestRequest(req, acmeChallangeHandler)
+	rr := executeTestRequest(req, acmeChallengeHandler)
 	assert.Equal(t, rr.Code, http.StatusNotFound)
 }
 
 func TestTokenLimit(t *testing.T) {
 	localTokens := make(map[string]byte)
-	for len(localTokens) < MAX_TOKENS+1 {
+	for len(localTokens) < MaxTokens+1 {
 		token := genRandomToken()
 		localTokens[token.Domain] = 1
 		rr := executeToken(t, http.MethodPost, token)
-		if len(localTokens) <= MAX_TOKENS {
+		if len(localTokens) <= MaxTokens {
 			assert.Equal(t, rr.Code, http.StatusOK, "Less tokens than limit")
 		} else {
 			assert.Equal(t, rr.Code, http.StatusInsufficientStorage, "Limitation hit")
