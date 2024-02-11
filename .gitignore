@@ -1,4 +1,5 @@
 /.idea
+/dist/
 certbot_proxy
 certbot_proxy.exe
 *.out
