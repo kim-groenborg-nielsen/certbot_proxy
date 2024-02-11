@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -37,7 +37,7 @@ func randomSting(n int) string {
 }
 
 func (token *CertToken) setRandomToken() {
-	token.Domain = randomSting(20)+"."+randomSting(4)
+	token.Domain = randomSting(20) + "." + randomSting(4)
 	token.Token = randomSting(40)
 	token.Validation = randomSting(40)
 }
@@ -178,7 +178,7 @@ func TestAcmeChallangeHandlerInvalidUrl(t *testing.T) {
 
 func TestTokenLimit(t *testing.T) {
 	localTokens := make(map[string]byte)
-	for len(localTokens) < MAX_TOKENS + 1 {
+	for len(localTokens) < MAX_TOKENS+1 {
 		token := genRandomToken()
 		localTokens[token.Domain] = 1
 		rr := executeToken(t, http.MethodPost, token)
@@ -188,7 +188,7 @@ func TestTokenLimit(t *testing.T) {
 			assert.Equal(t, rr.Code, http.StatusInsufficientStorage, "Limitation hit")
 		}
 	}
-	
+
 	// Cleanup
 	returnCodes := make(map[int]int)
 	count := 0
