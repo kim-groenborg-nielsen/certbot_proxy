@@ -6,11 +6,11 @@ archives:
         format: zip
 
 builds:
-  - id: certbox_proxy
+  - id: certbot_proxy
     env:
       - CGO_ENABLED=0
 #    main: .
-    binary: certbox_proxy
+    binary: certbot_proxy
     ldflags:
       - -s -w -X main.version={{.Version}}
       - -X main.commit={{.Commit}}
