@@ -117,6 +117,7 @@ server {
 
 /etc/nginx/sites-enabled/main-site-ssl linked to /etc/nginx/sites-available/main-site-ssl containing something like:
 ```
+server {
         # SSL configuration
         #
         listen 443 ssl;
