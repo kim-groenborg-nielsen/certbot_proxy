@@ -122,7 +122,7 @@ server {
         listen 443 ssl;
         listen [::]:443 ssl;
         
-        include snippet/cert-setup.conf;
+        include snippets/cert-setup.conf;
         
         root /var/www/html;
         index index.html index.htm;
