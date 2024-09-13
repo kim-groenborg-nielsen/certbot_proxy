@@ -90,6 +90,11 @@ TOKEN_POST_PATH="/ShouldBeChangedIntoALongRandomStringWithoutSpaces/"
 # Default upload path is the program folder with /upload added
 #UPLOAD_PATH="/SomethingElse"
 ```
+### Ensure that the Nginx is available from outside
+The Nginx server should be reachable from outside on port 80.
+
+And certbot must be present, and there must be a web server with assigned SSL certificat on this local instance.  
+This could be the default server.
 
 ### Nginx example
 /etc/nginx/sites-enabled/default linked to /etc/nginx/sites-available/default containing:
@@ -123,7 +128,7 @@ server {
         listen 443 ssl;
         listen [::]:443 ssl;
         
-        include snippets/cert-setup.conf;
+        # include snippets/cert-setup.conf;
         
         root /var/www/html;
         index index.html index.htm;
