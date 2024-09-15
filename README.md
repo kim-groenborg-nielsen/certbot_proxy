@@ -7,6 +7,30 @@ The certbot_proxy is handling the calls to http://<_FQDN_>/.well-known/acme-chal
 And it is also handling POST / DELETE of token data from the certbot client, using curl in the certbot_auth_hook
 and certbot_cleanup_hook scripts.
 
+## Usage
+```
+Usage of ./certbot_proxy:
+  -host string
+        Host to listen on (default "localhost")
+  -port string
+        Port to listen on (default "4080")
+  -token-post-path string
+        Path for posting tokens (default "/token_poster/")
+  -upload-path string
+        Path for uploading files (default "./upload")
+  -version
+ ```
+
+## Environment variables
+The following environment variables can be used to set the configuration:
+| Variable | Description | Default |
+|----------|-------------|---------|
+| HOST | Host to listen on | localhost |
+| PORT | Port to listen on | 4080 |
+| TOKEN_POST_PATH | Path for posting tokens | /token_poster/ |
+| UPLOAD_PATH | Path for uploading files | ./upload |
+
+## Certbot setup
 certbot_auth_hook script example:
 ```bash
 #!/bin/bash

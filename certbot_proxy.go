@@ -28,6 +28,8 @@ var certTokens = make(map[string]CertToken)
 
 var tokenPostPath = os.Getenv("TOKEN_POST_PATH")
 var uploadPath = os.Getenv("UPLOAD_PATH")
+var port = os.Getenv("PORT")
+var host = os.Getenv("HOST")
 
 const acmeChallengePath = "/.well-known/acme-challenge/"
 const MaxTokens = 10000
@@ -36,14 +38,6 @@ const MaxUploadFileSize = 1024 * 1014
 
 func main() {
 	var showVersion bool
-
-	flag.BoolVar(&showVersion, "version", false, "Show version")
-	flag.Parse()
-
-	if showVersion {
-		fmt.Printf("Version: %s\nCommit:  %s\nDate:    %s\n", version, commit, date)
-		os.Exit(0)
-	}
 
 	if tokenPostPath == "" {
 		tokenPostPath = "/token_poster/"
@@ -55,10 +49,23 @@ func main() {
 		}
 		uploadPath = path.Dir(ex) + "/upload"
 	}
-	port := os.Getenv("PORT")
 	if port == "" {
 		port = "4080"
-		log.Printf("Defaulting to port %s", port)
+	}
+	if host == "" {
+		host = "localhost"
+	}
+
+	flag.BoolVar(&showVersion, "version", false, "Show version")
+	flag.StringVar(&tokenPostPath, "token-post-path", tokenPostPath, "Path for posting tokens")
+	flag.StringVar(&uploadPath, "upload-path", uploadPath, "Path for uploading files")
+	flag.StringVar(&port, "port", port, "Port to listen on")
+	flag.StringVar(&host, "host", host, "Host to listen on")
+	flag.Parse()
+
+	if showVersion {
+		fmt.Printf("Version: %s\nCommit:  %s\nDate:    %s\n", version, commit, date)
+		os.Exit(0)
 	}
 
 	//http.HandleFunc("/", indexHandler)
@@ -69,8 +76,8 @@ func main() {
 	log.Printf("Upload file path %s", uploadPath)
 	log.Printf("Token post path %s", tokenPostPath)
 	log.Printf("Listening on port %s", port)
-	log.Printf("Open http://localhost:%s in the browser", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("localhost:%s", port), nil))
+	log.Printf("Open http://%s:%s in the browser", host, port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("%s:%s", host, port), nil))
 }
 
 func getIp(r *http.Request) string {
